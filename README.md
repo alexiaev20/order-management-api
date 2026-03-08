@@ -61,17 +61,6 @@ A documentação interativa detalha todos os endpoints, modelos de dados e requi
 
 Interface Swagger: /order-management-api/docs (Acessível via Host e Porta configurados).
 
-### Credenciais de Teste
-
-As credenciais de acesso para homologação estão implementadas na lógica de autenticação da rota:
-
-```text
-/login Para fins de auditoria e teste, consulte os parâmetros de validação no código-fonte:
-```
-
-```text
-app.js
-```
 
 ## Ciclo de Testes Automatizados
 
