@@ -1,11 +1,26 @@
+require('dotenv').config();
 const express = require('express');
 const Order = require('./database');
+const jwt = require('jsonwebtoken');
+const authMiddleware = require('./auth/middleware');
 const app = express();
 
 app.use(express.json());
 
-// ria um novo pedido POST com Mapping
-app.post('/order', async (req, res) => {
+const SECRET_KEY = process.env.SECRET_KEY;
+
+// Rota pública para gerar o token de acesso
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === "admin" && password === "123456") {
+        const token = jwt.sign({ user: username }, SECRET_KEY, { expiresIn: '1h' });
+        return res.json({ auth: true, token });
+    }
+    res.status(401).json({ message: "Usuário ou senha inválidos" });
+});
+
+// cria um novo pedido POST com Mapping - ROTA PROTEGIDA
+app.post('/order', authMiddleware, async (req, res) => {
     try {
         const data = req.body;
         const mappedOrder = {
@@ -26,8 +41,19 @@ app.post('/order', async (req, res) => {
     }
 });
 
-// Pegando os dados do pedido GET
-app.get('/order/:orderId', async (req, res) => {
+//Listar todos os pedidos - ROTA PROTEGIDA
+app.get('/order/list', authMiddleware, async (req, res) => {
+    try {
+        const orders = await Order.find();
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao listar pedidos" });
+    }
+});
+
+
+// Pegando os dados do pedido GET - ROTA PROTEGIDA
+app.get('/order/:orderId', authMiddleware, async (req, res) => {
     try {
         const order = await Order.findOne({ orderId: req.params.orderId });
         if (!order) return res.status(404).json({ message: "Pedido não encontrado" });
@@ -37,18 +63,9 @@ app.get('/order/:orderId', async (req, res) => {
     }
 });
 
-//Listar todos os pedidos 
-app.get('/order/list', async (req, res) => {
-    try {
-        const orders = await Order.find();
-        res.json(orders);
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao listar pedidos" });
-    }
-});
 
-// Atualizar o pedido 
-app.put('/order/:orderId', async (req, res) => {
+// Atualizar o pedido - ROTA PROTEGIDA
+app.put('/order/:orderId', authMiddleware, async (req, res) => {
     try {
         const updatedOrder = await Order.findOneAndUpdate(
             { orderId: req.params.orderId },
@@ -62,8 +79,8 @@ app.put('/order/:orderId', async (req, res) => {
     }
 });
 
-//Deletar o pedido 
-app.delete('/order/:orderId', async (req, res) => {
+//Deletar o pedido - ROTA PROTEGIDA
+app.delete('/order/:orderId', authMiddleware, async (req, res) => {
     try {
         const deletedOrder = await Order.findOneAndDelete({ orderId: req.params.orderId });
         if (!deletedOrder) return res.status(404).json({ message: "Pedido não encontrado para deletar" });
