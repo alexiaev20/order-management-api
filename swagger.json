@@ -1,0 +1,219 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API de Gerenciamento de Pedidos",
+        "version": "1.0.0",
+        "description": "Documentação da API desenvolvida para o desafio técnico Jitterbit."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000",
+            "description": "Servidor Local"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    },
+    "paths": {
+        "/login": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Realiza login e gera o token de acesso",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "description": "Nome de usuário cadastrado"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "senha",
+                                        "description": "Senha de acesso"
+                                    }
+                                },
+                                "required": [
+                                    "username",
+                                    "senha"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Autenticado com sucesso."
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas ou usuário não encontrado."
+                    }
+                }
+            }
+        },
+        "/order": {
+            "post": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Cria um novo pedido",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "numeroPedido": {
+                                        "type": "string"
+                                    },
+                                    "valorTotal": {
+                                        "type": "number"
+                                    },
+                                    "dataCriacao": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "idItem": {
+                                                    "type": "number"
+                                                },
+                                                "quantidadeItem": {
+                                                    "type": "number"
+                                                },
+                                                "valorItem": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pedido registrado e mapeado no banco de dados."
+                    },
+                    "401": {
+                        "description": "Token JWT ausente ou inválido."
+                    }
+                }
+            }
+        },
+        "/order/list": {
+            "get": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Lista todos os pedidos do sistema",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de pedidos retornada com sucesso."
+                    },
+                    "401": {
+                        "description": "Não autorizado."
+                    }
+                }
+            }
+        },
+        "/order/{orderId}": {
+            "parameters": [
+                {
+                    "name": "orderId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Busca detalhes de um pedido específico",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pedido encontrado."
+                    },
+                    "404": {
+                        "description": "Pedido não localizado."
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Atualiza dados de um pedido existente",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pedido atualizado com sucesso."
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Remove permanentemente um pedido",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Pedido excluído."
+                    }
+                }
+            }
+        }
+    }
+}

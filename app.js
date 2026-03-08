@@ -3,9 +3,16 @@ const express = require('express');
 const Order = require('./database');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('./auth/middleware');
-const app = express();
 
+// Documentação Swagger
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
+
+const app = express();
 app.use(express.json());
+
+// Rota da documentação
+app.use('/order-management-api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const SECRET_KEY = process.env.SECRET_KEY;
 
