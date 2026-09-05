@@ -12,6 +12,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "amqplib": "^0.10.3",
     "redis": "^4.6.10",
     "bcrypt": "^5.1.1",
     "express-rate-limit": "^7.1.5",

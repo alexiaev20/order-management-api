@@ -1,3 +1,4 @@
+const { publishOrder } = require('../config/rabbitmqClient');
 const redisClient = require('../config/redisClient');
 const Order = require('../models/Order');
 
@@ -16,6 +17,7 @@ exports.createOrder = async (req, res) => {
         };
         const newOrder = new Order(mappedOrder);
         await newOrder.save();
+        publishOrder(newOrder);
         res.status(201).json({ message: "Pedido criado e mapeado com sucesso!", data: newOrder });
     } catch (error) {
         res.status(400).json({ message: "Erro na criação ou mapping", error: error.message });
