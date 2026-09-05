@@ -1,33 +1,8 @@
-require('dotenv').config();
-const express = require('express');
-const Order = require('./database');
-const jwt = require('jsonwebtoken');
-const authMiddleware = require('./auth/middleware');
+const { publishOrder } = require('../config/rabbitmqClient');
+const redisClient = require('../config/redisClient');
+const Order = require('../models/Order');
 
-// Documentação Swagger
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('./swagger.json');
-
-const app = express();
-app.use(express.json());
-
-// Rota da documentação
-app.use('/order-management-api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-const SECRET_KEY = process.env.SECRET_KEY;
-
-// Rota pública para gerar o token de acesso
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === "admin" && password === "123456") {
-        const token = jwt.sign({ user: username }, SECRET_KEY, { expiresIn: '1h' });
-        return res.json({ auth: true, token });
-    }
-    res.status(401).json({ message: "Usuário ou senha inválidos" });
-});
-
-// cria um novo pedido POST com Mapping - ROTA PROTEGIDA
-app.post('/order', authMiddleware, async (req, res) => {
+exports.createOrder = async (req, res) => {
     try {
         const data = req.body;
         const mappedOrder = {
@@ -42,25 +17,36 @@ app.post('/order', authMiddleware, async (req, res) => {
         };
         const newOrder = new Order(mappedOrder);
         await newOrder.save();
+        publishOrder(newOrder);
         res.status(201).json({ message: "Pedido criado e mapeado com sucesso!", data: newOrder });
     } catch (error) {
         res.status(400).json({ message: "Erro na criação ou mapping", error: error.message });
     }
-});
+};
 
-//Listar todos os pedidos - ROTA PROTEGIDA
-app.get('/order/list', authMiddleware, async (req, res) => {
+exports.getAllOrders = async (req, res) => {
     try {
+        const cacheKey = 'orders:all';
+        const cachedOrders = await redisClient.get(cacheKey);
+
+        if (cachedOrders) {
+            console.log(" Retornando orders do CACHE REDIS (Alta Performance)");
+            return res.json(JSON.parse(cachedOrders));
+        }
+
+        console.log(" Buscando orders no MONGODB...");
         const orders = await Order.find();
+        
+        // Salva no cache por 60 segundos
+        await redisClient.setEx(cacheKey, 60, JSON.stringify(orders));
+        
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: "Erro ao listar pedidos" });
     }
-});
+};
 
-
-// Pegando os dados do pedido GET - ROTA PROTEGIDA
-app.get('/order/:orderId', authMiddleware, async (req, res) => {
+exports.getOrderById = async (req, res) => {
     try {
         const order = await Order.findOne({ orderId: req.params.orderId });
         if (!order) return res.status(404).json({ message: "Pedido não encontrado" });
@@ -68,11 +54,9 @@ app.get('/order/:orderId', authMiddleware, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erro ao buscar pedido" });
     }
-});
+};
 
-
-// Atualizar o pedido - ROTA PROTEGIDA
-app.put('/order/:orderId', authMiddleware, async (req, res) => {
+exports.updateOrder = async (req, res) => {
     try {
         const updatedOrder = await Order.findOneAndUpdate(
             { orderId: req.params.orderId },
@@ -84,10 +68,9 @@ app.put('/order/:orderId', authMiddleware, async (req, res) => {
     } catch (error) {
         res.status(400).json({ message: "Erro ao atualizar", error: error.message });
     }
-});
+};
 
-//Deletar o pedido - ROTA PROTEGIDA
-app.delete('/order/:orderId', authMiddleware, async (req, res) => {
+exports.deleteOrder = async (req, res) => {
     try {
         const deletedOrder = await Order.findOneAndDelete({ orderId: req.params.orderId });
         if (!deletedOrder) return res.status(404).json({ message: "Pedido não encontrado para deletar" });
@@ -95,10 +78,4 @@ app.delete('/order/:orderId', authMiddleware, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erro ao deletar" });
     }
-});
-
-// Liga o servidor
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`API Rodando em http://localhost:${PORT}`);
-});
+};
