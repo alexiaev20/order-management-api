@@ -1,3 +1,4 @@
+const redisClient = require('../config/redisClient');
 const Order = require('../models/Order');
 
 exports.createOrder = async (req, res) => {
@@ -23,7 +24,20 @@ exports.createOrder = async (req, res) => {
 
 exports.getAllOrders = async (req, res) => {
     try {
+        const cacheKey = 'orders:all';
+        const cachedOrders = await redisClient.get(cacheKey);
+
+        if (cachedOrders) {
+            console.log(" Retornando orders do CACHE REDIS (Alta Performance)");
+            return res.json(JSON.parse(cachedOrders));
+        }
+
+        console.log(" Buscando orders no MONGODB...");
         const orders = await Order.find();
+        
+        // Salva no cache por 60 segundos
+        await redisClient.setEx(cacheKey, 60, JSON.stringify(orders));
+        
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: "Erro ao listar pedidos" });
