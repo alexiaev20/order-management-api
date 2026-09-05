@@ -1,3 +1,5 @@
+const morgan = require('morgan');
+const logger = require('./config/logger');
 require('dotenv').config();
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
@@ -9,6 +11,10 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 app.use(express.json());
+
+// Logger HTTP (Morgan via Winston)
+app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
+
 
 // Proteção contra ataques DDoS / Brute Force
 const apiLimiter = rateLimit({

@@ -12,6 +12,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "morgan": "^1.10.0",
+    "winston": "^3.11.0",
     "amqplib": "^0.10.3",
     "redis": "^4.6.10",
     "bcrypt": "^5.1.1",
