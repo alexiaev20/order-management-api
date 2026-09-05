@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/orderDB
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URI=amqp://rabbitmq
+      - SECRET_KEY=jwt_secret_key_corporativa
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+    volumes:
+      - ./logs:/app/logs
+
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+volumes:
+  mongo-data:
